@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en"><head><script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1CQ4D3VQ3L"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1CQ4D3VQ3L');
+  </script>
+
+<meta charset="UTF-8">
+
+<!-- Prevent page-level zooming to allow in-app scene zooming only -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+
+<title>Disco Ball: 3D Optical Lab</title>
+
+<meta name="description" content="Immersive 3D disco ball visualizer featuring a reflective mirror core, dynamic nebulae, and customizable starfields in a high-fidelity generative environment.">
+<meta name="keywords" content="Disco Ball, Three.js, Generative Art, 3D Visualizer, Space Simulation, Particle System, WebGL, Interactive Design, Nebula Engine">
+<meta name="author" content="Chris Pirillo">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0f172a">
+
+<meta property="og:site_name" content="Chris Pirillo's Arcade">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Disco Ball: 3D Optical Lab">
+<meta property="og:description" content="Immersive 3D disco ball visualizer featuring a reflective mirror core, dynamic nebulae, and customizable starfields in a high-fidelity generative environment.">
+<meta property="og:url" content="https://pirillo.com/arcade/disco-ball.html">
+<meta property="og:image" content="https://pirillo.com/arcade/images/disco-ball.png">
+<meta property="og:image:alt" content="Disco Ball: 3D Optical Lab">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@ChrisPirillo">
+<meta name="twitter:creator" content="@ChrisPirillo">
+<meta name="twitter:title" content="Disco Ball: 3D Optical Lab">
+<meta name="twitter:description" content="Immersive 3D disco ball visualizer featuring a reflective mirror core, dynamic nebulae, and customizable starfields in a high-fidelity generative environment.">
+<meta name="twitter:image" content="https://pirillo.com/arcade/images/disco-ball.png">
+<meta name="twitter:domain" content="pirillo.com">
+
+<link rel="canonical" href="https://pirillo.com/arcade/disco-ball.html">
+
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Disco Ball: 3D Optical Lab",
+  "description": "Immersive 3D disco ball visualizer featuring a reflective mirror core, dynamic nebulae, and customizable starfields in a high-fidelity generative environment.",
+  "keywords": "Disco Ball, Three.js, Generative Art, 3D Visualizer, Space Simulation, Particle System, WebGL, Interactive Design, Nebula Engine",
+  "url": "https://pirillo.com/arcade/disco-ball.html",
+  "image": "https://pirillo.com/arcade/images/disco-ball.png",
+  "primaryImageOfPage": {
+    "@type": "ImageObject",
+    "url": "https://pirillo.com/arcade/images/disco-ball.png"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Chris Pirillo",
+    "url": "https://pirillo.com",
+    "sameAs": [
+      "https://x.com/ChrisPirillo"
+    ]
+  },
+  "mainEntity": {
+    "name": "Disco Ball: 3D Optical Lab",
+    "description": "Immersive 3D disco ball visualizer featuring a reflective mirror core, dynamic nebulae, and customizable starfields in a high-fidelity generative environment.",
+    "image": "https://pirillo.com/arcade/images/disco-ball.png",
+    "operatingSystem": "Web Browser",
+    "author": {
+      "@type": "Person",
+      "name": "Chris Pirillo"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
+    },
+    "@type": "WebApplication",
+    "applicationCategory": "Generative Art Visualizer"
+  }
+}</script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+    
+    body { 
+        margin: 0; 
+        overflow: hidden; 
+        font-family: 'Inter', sans-serif; 
+        background-color: #000; 
+        color: white; 
+        user-select: none; 
+        -webkit-user-select: none; 
+        /* overscroll-behavior: none strictly prevents "pull-to-refresh" */
+        overscroll-behavior: none; 
+    }
+
+    /* touch-action: none ensures we handle all gestures (drags AND pinches) in JavaScript */
+    canvas { 
+        display: block; 
+        touch-action: none; 
+    }
+
+    #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; opacity: 0; pointer-events: none; transition: opacity 0.6s ease; z-index: 40; }
+    
+    /* Glassomorphism Panel */
+    .settings-panel { 
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+        background: rgba(15, 23, 42, 0.65); 
+        backdrop-filter: blur(50px) saturate(180%);
+        -webkit-backdrop-filter: blur(50px) saturate(180%);
+        z-index: 60; 
+        border-left: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: -10px 0 40px rgba(0,0,0,0.5);
+    }
+    .hidden-panel { transform: translateX(100%); }
+    
+    @media (min-width: 768px) { 
+        .hidden-panel { transform: translateX(100%); }
+        .settings-panel { right: 0; left: auto; }
+    }
+
+    /* Glass Buttons */
+    .glass-btn {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+    .glass-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+    .glass-btn:active {
+        transform: scale(0.96);
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    input[type="range"] { accent-color: #fff; cursor: pointer; height: 4px; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+    
+    .toggle-switch { position: relative; display: inline-block; width: 34px; height: 20px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: rgba(255,255,255,0.5); }
+    input:checked + .slider:before { transform: translateX(14px); }
+    .disabled-ui { opacity: 0.15 !important; pointer-events: none !important; filter: grayscale(1) brightness(0.3) !important; transition: all 0.4s ease; }
+</style>
+</head>
+<body class="bg-black"><h1 style="display: none;">Disco Ball</h1>
+
+    <div id="fade-overlay"></div>
+
+    <div class="fixed inset-0 pointer-events-none z-50">
+        <button id="menu-toggle" class="absolute top-6 right-6 p-4 glass-btn rounded-2xl pointer-events-auto shadow-2xl">
+            <svg id="menu-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg>
+        </button>
+
+        <aside id="settings-panel" class="settings-panel fixed top-0 h-full w-full md:w-96 hidden-panel pointer-events-auto flex flex-col shadow-2xl">
+            <header class="sticky top-0 z-10 px-6 py-8 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-xl">
+                <h2 class="text-xl font-black uppercase tracking-tighter">Control Deck</h2>
+                <div class="flex items-center gap-2">
+                    <button id="help-trigger" class="opacity-30 hover:opacity-100 transition-opacity p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </button>
+                    <button id="close-settings" class="p-2 opacity-50 hover:opacity-100 transition-opacity">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-12 pb-24">
+                
+                <section class="space-y-6">
+                    <label class="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Nebula Engine</label>
+                    <div class="grid gap-6">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Cloud Density</span>
+                                <span id="orb-count-val" class="text-[10px] font-mono opacity-50">120</span>
+                            </div>
+                            <input type="range" id="orb-count" min="20" max="600" step="1" value="120" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Expansion Scale</span>
+                                <span id="cloud-scale-val" class="text-[10px] font-mono opacity-50">1.0</span>
+                            </div>
+                            <input type="range" id="cloud-scale" min="0.1" max="1.3" step="0.01" value="1.0" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Nebula Radius</span>
+                                <span id="nebula-radius-val" class="text-[10px] font-mono opacity-50">100</span>
+                            </div>
+                            <input type="range" id="nebula-radius" min="75" max="450" step="1" value="100" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Vortex Velocity</span>
+                                <span id="orb-speed-val" class="text-[10px] font-mono opacity-50">1.0</span>
+                            </div>
+                            <input type="range" id="orb-speed" min="0" max="2" step="0.05" value="1.0" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Breathing Pulse</span>
+                                <span id="pulse-speed-val" class="text-[10px] font-mono opacity-50">1.0</span>
+                            </div>
+                            <input type="range" id="pulse-speed" min="0" max="5" step="0.1" value="1.0" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Chaos Intensity</span>
+                                <span id="chaos-drift-val" class="text-[10px] font-mono opacity-50">0.5</span>
+                            </div>
+                            <input type="range" id="chaos-drift" min="0" max="2" step="0.1" value="0.5" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Gaseous Opacity</span>
+                                <span id="cloud-opacity-val" class="text-[10px] font-mono opacity-50">0.5</span>
+                            </div>
+                            <input type="range" id="cloud-opacity" min="0.05" max="1" step="0.05" value="0.5" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="space-y-6">
+                    <label class="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Mirror Core</label>
+                    <div class="grid gap-6">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Surface Roughness</span>
+                                <span id="roughness-val" class="text-[10px] font-mono opacity-50">0.05</span>
+                            </div>
+                            <input type="range" id="roughness" min="0" max="1" step="0.001" value="0.05" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Core Rotation</span>
+                                <span id="rot-speed-val" class="text-[10px] font-mono opacity-50">0.001</span>
+                            </div>
+                            <input type="range" id="rot-speed" min="0" max="0.002" step="0.0001" value="0.001" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Facet Detail</span>
+                                <span id="facet-res-val" class="text-[10px] font-mono opacity-50">48</span>
+                            </div>
+                            <input type="range" id="facet-res" min="4" max="128" step="1" value="48" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Core Size</span>
+                                <span id="core-size-val" class="text-[10px] font-mono opacity-50">6.5</span>
+                            </div>
+                            <input type="range" id="core-size" min="1" max="15" step="0.1" value="6.5" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Reflection Gain</span>
+                                <span id="reflect-intensity-val" class="text-[10px] font-mono opacity-50">12.0</span>
+                            </div>
+                            <input type="range" id="reflect-intensity" min="8" max="40" step="0.1" value="12.0" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="space-y-6">
+                    <label class="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Atmospheric Light</label>
+                    <div class="grid gap-6">
+                        <div class="space-y-3">
+                            <span class="text-[10px] text-white/30 uppercase tracking-widest">Chromatic Seeds</span>
+                            <div id="color-grid" class="grid grid-cols-3 gap-2">
+                                <input type="color" id="light-a-color" value="#00ffff" class="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer p-1">
+                                <input type="color" id="light-b-color" value="#ff00ff" class="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer p-1">
+                                <input type="color" id="light-c-color" value="#00ff88" class="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer p-1">
+                                <input type="color" id="light-d-color" value="#ffff00" class="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer p-1">
+                                <input type="color" id="light-e-color" value="#ff8800" class="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer p-1">
+                                <input type="color" id="light-f-color" value="#ff0000" class="w-full h-10 bg-white/5 border border-white/10 rounded-lg cursor-pointer p-1">
+                            </div>
+                            <div class="grid gap-2 mt-4">
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                    <span class="text-xs text-white/60">Single Hue Mode</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="hue-lock">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                    <span class="text-xs text-white/60">Monochrome Force</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="mono-lock">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Bloom Intensity</span>
+                                <span id="exposure-val" class="text-[10px] font-mono opacity-50">0.6</span>
+                            </div>
+                            <input type="range" id="exposure" min="0.2" max="1" step="0.01" value="0.6" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-white/60">Camera FOV</span>
+                                <span id="cam-fov-val" class="text-[10px] font-mono opacity-50">40</span>
+                            </div>
+                            <input type="range" id="cam-fov" min="10" max="110" step="1" value="40" class="w-full bg-white/10 rounded-full appearance-none">
+                        </div>
+                        
+                        <div class="pt-6 border-t border-white/5 space-y-6">
+                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                <span class="text-xs text-white/60">Star Master Switch</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="stars-visible" checked="">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-white/60">Star Brightness</span>
+                                    <span id="star-intensity-val" class="text-[10px] font-mono opacity-50">300</span>
+                                </div>
+                                <input type="range" id="star-intensity" min="200" max="1000" step="10" value="300" class="w-full bg-white/10 rounded-full appearance-none">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-white/60">Star Velocity</span>
+                                    <span id="star-speed-val" class="text-[10px] font-mono opacity-50">0.5</span>
+                                </div>
+                                <input type="range" id="star-speed" min="0" max="5" step="0.1" value="0.5" class="w-full bg-white/10 rounded-full appearance-none">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-white/60">Twinkle Speed</span>
+                                    <span id="star-twinkle-val" class="text-[10px] font-mono opacity-50">1.0</span>
+                                </div>
+                                <input type="range" id="star-twinkle" min="0" max="5" step="0.1" value="1.0" class="w-full bg-white/10 rounded-full appearance-none">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-white/60">Max Physical Size</span>
+                                    <span id="star-size-val" class="text-[10px] font-mono opacity-50">2.0</span>
+                                </div>
+                                <input type="range" id="star-size" min="0.1" max="25" step="0.5" value="2.0" class="w-full bg-white/10 rounded-full appearance-none">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-white/60">Size Variance</span>
+                                    <span id="star-variance-val" class="text-[10px] font-mono opacity-50">0.5</span>
+                                </div>
+                                <input type="range" id="star-variance" min="0" max="1" step="0.05" value="0.5" class="w-full bg-white/10 rounded-full appearance-none">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-white/60">Star Quantity</span>
+                                    <span id="star-count-val" class="text-[10px] font-mono opacity-50">15000</span>
+                                </div>
+                                <input type="range" id="star-count" min="0" max="100000" step="500" value="15000" class="w-full bg-white/10 rounded-full appearance-none">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="space-y-4 pt-6 border-t border-white/5">
+                    <button id="randomize-btn" class="w-full py-4 glass-btn text-white font-black text-xs uppercase rounded-2xl shadow-lg">Regenerate Universe</button>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="export-json" class="py-3 glass-btn text-[10px] font-black uppercase rounded-xl">Export Design</button>
+                        <button id="import-json" class="py-3 glass-btn text-[10px] font-black uppercase rounded-xl">Import Design</button>
+                    </div>
+                    <button id="export-wallpaper" class="w-full py-3 glass-btn text-[10px] font-black uppercase rounded-xl">Capture Manifestation</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <div id="help-modal" class="fixed inset-0 z-[120] hidden bg-black/95 backdrop-blur-3xl flex items-center justify-center p-6">
+        <div class="max-w-md w-full space-y-8 text-center bg-zinc-900/40 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shadow-2xl relative">
+            <h3 class="text-4xl font-black italic uppercase tracking-tighter text-white">Disco Ball</h3>
+            <div class="space-y-4 text-sm text-white/60 leading-relaxed">
+                <p>The core dynamically reflects the <span class="text-white font-bold italic">nebula gas</span> in real-time. Distant stars are fixed to the deep galactic horizon for spatial contrast.</p>
+                <p>Manipulate the universe by <span class="text-white font-bold italic">dragging</span> to orbit and <span class="text-white font-bold italic">scrolling</span> to zoom. Interaction is paused while the deck is visible. Press <span class="text-white font-bold italic">Esc</span> to quickly exit any overlay.</p>
+                <p>Now, you can <span class="text-white font-bold italic">grab the disco ball</span> directly to swing it! Let go to see it snap back naturally.</p>
+                
+                <div class="pt-6 grid grid-cols-1 gap-2 border-t border-white/5">
+                    <a href="https://arcade.pirillo.com/" target="_blank" class="block py-3 px-4 glass-btn rounded-2xl text-[10px] font-black uppercase tracking-widest">More of My Apps</a>
+                    <a href="https://chris.pirillo.com/" target="_blank" class="block py-3 px-4 glass-btn rounded-2xl text-[10px] font-black uppercase tracking-widest">Follow Chris Pirillo</a>
+                    <a href="https://ctrlaltcreate.live/" target="_blank" class="block py-3 px-4 glass-btn rounded-2xl text-[10px] font-black uppercase tracking-widest text-emerald-400">Learn How to Make Apps</a>
+                    <a href="https://www.paypal.com/donate/?hosted_button_id=UMWCDWGVXVHZU" target="_blank" class="block py-3 px-4 glass-btn rounded-2xl text-[10px] font-black uppercase tracking-widest text-amber-400">Donate to Me Here</a>
+                    <a href="https://patreon.com/ChrisPirillo" target="_blank" class="block py-3 px-4 glass-btn rounded-2xl text-[10px] font-black uppercase tracking-widest text-rose-400">Support My Patreon</a>
+                </div>
+            </div>
+            <button id="close-help" class="mt-8 text-[10px] font-bold uppercase tracking-widest opacity-30 hover:opacity-100 p-4 w-full">Close Window</button>
+        </div>
+    </div>
+
+    <script type="module">
+        let scene, camera, renderer, ball, cubeCamera, cubeRenderTarget, starField, wire;
+        let nebulaGroup, starGroup, nebulaClouds = [];
+        let isTransitioning = false;
+        let glowMap;
+        let starMaterial;
+
+        // Physics and gesture variables
+        let isDraggingBall = false;
+        let ballVelocity = new THREE.Vector3(0, 0, 0);
+        const springK = 0.08;
+        const damping = 0.94;
+        const ballRaycaster = new THREE.Raycaster();
+        const dragPlane = new THREE.Plane();
+        const planeIntersection = new THREE.Vector3();
+        
+        let initialPinchDist = 0; // Track touch zoom distance
+
+        const CONFIG = {
+            orbCount: 120,
+            cloudScale: 1.0,
+            nebulaRadius: 100,
+            orbSpeed: 1.0,
+            chaosDrift: 0.5,
+            pulseSpeed: 1.0,
+            cloudOpacity: 0.5,
+            roughness: 0.05,
+            spinVel: 0.001,
+            metalness: 1.0,
+            dispersion: 1.0,
+            facetRes: 48,
+            reflectIntensity: 12.0,
+            exposure: 0.6,
+            starCount: 15000,
+            starIntensity: 300,
+            starSpeed: 0.5,
+            starTwinkle: 1.0,
+            starSize: 2.0,
+            starVariance: 0.5,
+            starsVisible: true,
+            camFov: 40,
+            hueLock: false,
+            monoLock: false,
+            wireVisible: false, 
+            coreSize: 7.0,
+            lightA: '#00ffff',
+            lightB: '#ff00ff',
+            lightC: '#00ff88',
+            lightD: '#ffff00',
+            lightE: '#ff8800',
+            lightF: '#ff0000'
+        };
+
+        const els = {
+            panel: document.getElementById('settings-panel'),
+            toggle: document.getElementById('menu-toggle'),
+            overlay: document.getElementById('fade-overlay'),
+            help: document.getElementById('help-modal'),
+            colors: ['light-a-color', 'light-b-color', 'light-c-color', 'light-d-color', 'light-e-color', 'light-f-color']
+        };
+
+        const starShader = {
+            uniforms: {
+                time: { value: 0 },
+                pointTexture: { value: null },
+                globalIntensity: { value: 1.0 },
+                twinkleSpeed: { value: 1.0 },
+                baseSize: { value: 2.0 },
+                sizeVariance: { value: 0.5 }
+            },
+            vertexShader: `
+                attribute float phase;
+                attribute float individualScale;
+                varying float vTwinkle;
+                uniform float time;
+                uniform float twinkleSpeed;
+                uniform float baseSize;
+                uniform float sizeVariance;
+                void main() {
+                    vTwinkle = 0.5 + 0.5 * sin(time * 2.0 * twinkleSpeed + phase * 6.28);
+                    vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+                    float finalSize = baseSize * (1.0 - sizeVariance + (individualScale * sizeVariance * 2.0));
+                    gl_PointSize = finalSize * ( 6000.0 / -mvPosition.z );
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D pointTexture;
+                uniform float globalIntensity;
+                varying float vTwinkle;
+                void main() {
+                    vec4 texColor = texture2D( pointTexture, gl_PointCoord );
+                    gl_FragColor = vec4( texColor.rgb * vTwinkle * globalIntensity, texColor.a * vTwinkle );
+                }
+            `
+        };
+
+        function generateGlowTexture() {
+            const size = 512;
+            const canvas = document.createElement('canvas');
+            canvas.width = size; canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            grad.addColorStop(0, 'rgba(255,255,255,1)');
+            grad.addColorStop(0.2, 'rgba(255,255,255,0.85)');
+            grad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
+            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0,size,size);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(CONFIG.camFov, window.innerWidth / window.innerHeight, 1, 60000);
+            camera.position.set(0, 0, 60);
+            camera.layers.enable(1);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            document.body.appendChild(renderer.domElement);
+
+            glowMap = generateGlowTexture();
+            nebulaGroup = new THREE.Group();
+            scene.add(nebulaGroup);
+
+            starGroup = new THREE.Group();
+            scene.add(starGroup);
+
+            cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, { 
+                format: THREE.RGBFormat, 
+                generateMipmaps: true, 
+                minFilter: THREE.LinearMipmapLinearFilter 
+            });
+            cubeCamera = new THREE.CubeCamera(1, 4000, cubeRenderTarget);
+            cubeCamera.layers.set(0); 
+            
+            randomizeSettings(true); 
+            
+            createBall();
+            createNebula();
+            createStars();
+            
+            window.addEventListener('resize', onResize);
+            setupInteractions();
+            bindUI();
+            
+            animate();
+        }
+
+        function createBall() {
+            if(ball) scene.remove(ball);
+            const radius = Number(CONFIG.coreSize);
+            const res = Math.floor(Math.max(4, Math.min(128, Number(CONFIG.facetRes)))); 
+            
+            try {
+                const geo = new THREE.SphereGeometry(radius, res, Math.floor(res/2)).toNonIndexed();
+                
+                const posAttr = geo.attributes.position;
+                const normAttr = geo.attributes.normal;
+                const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vC = new THREE.Vector3();
+                const cb = new THREE.Vector3(), ab = new THREE.Vector3();
+                for (let i = 0; i < posAttr.count; i += 3) {
+                    vA.fromBufferAttribute(posAttr, i); vB.fromBufferAttribute(posAttr, i + 1); vC.fromBufferAttribute(posAttr, i + 2);
+                    cb.subVectors(vC, vB); ab.subVectors(vA, vB);
+                    cb.cross(ab).normalize();
+                    normAttr.setXYZ(i, cb.x, cb.y, cb.z); normAttr.setXYZ(i + 1, cb.x, cb.y, cb.z); normAttr.setXYZ(i + 2, cb.x, cb.y, cb.z);
+                }
+
+                const mat = new THREE.MeshPhysicalMaterial({
+                    color: 0x000000,
+                    metalness: Number(CONFIG.metalness),
+                    roughness: Number(CONFIG.roughness),
+                    envMap: cubeRenderTarget.texture,
+                    envMapIntensity: Math.max(8.0, Number(CONFIG.reflectIntensity)), 
+                    flatShading: true,
+                    clearcoat: 1.0,
+                    reflectivity: 1.0
+                });
+
+                ball = new THREE.Mesh(geo, mat);
+                scene.add(ball);
+
+                if(wire) scene.remove(wire);
+                const wGeo = new THREE.CylinderGeometry(0.04, 0.04, 2000);
+                const wMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+                wire = new THREE.Mesh(wGeo, wMat);
+                wire.visible = false; 
+                scene.add(wire);
+            } catch(e) { console.error(e); }
+        }
+
+        function createStars() {
+            if(starField) starGroup.remove(starField);
+            const count = Math.floor(Number(CONFIG.starCount));
+            if(count <= 0) return;
+            
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = new Float32Array(count * 3);
+            const phases = new Float32Array(count);
+            const scales = new Float32Array(count);
+
+            for(let i=0; i<count; i++) {
+                const dist = 8000 + Math.random() * 6000;
+                const phi = Math.random() * Math.PI * 2;
+                const theta = Math.random() * Math.PI;
+                const v = new THREE.Vector3().setFromSphericalCoords(dist, phi, theta);
+                starPos[i*3] = v.x;
+                starPos[i*3+1] = v.y;
+                starPos[i*3+2] = v.z;
+                phases[i] = Math.random();
+                scales[i] = Math.random();
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            starGeo.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+            starGeo.setAttribute('individualScale', new THREE.BufferAttribute(scales, 1));
+            
+            starMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    pointTexture: { value: glowMap },
+                    globalIntensity: { value: Number(CONFIG.starIntensity) / 20 },
+                    twinkleSpeed: { value: Number(CONFIG.starTwinkle) },
+                    baseSize: { value: Number(CONFIG.starSize) },
+                    sizeVariance: { value: Number(CONFIG.starVariance) }
+                },
+                vertexShader: starShader.vertexShader,
+                fragmentShader: starShader.fragmentShader,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            
+            starField = new THREE.Points(starGeo, starMaterial);
+            starField.layers.set(1);
+            starField.visible = CONFIG.starsVisible;
+            starGroup.add(starField);
+        }
+
+        function createNebula() {
+            nebulaClouds.forEach(c => nebulaGroup.remove(c));
+            nebulaClouds = [];
+
+            const count = Math.max(1, Math.floor(Number(CONFIG.orbCount)));
+            const colorKeys = ['lightA', 'lightB', 'lightC', 'lightD', 'lightE', 'lightF'];
+            const baseCol = new THREE.Color(CONFIG.lightA);
+            const baseHSL = {}; baseCol.getHSL(baseHSL);
+
+            for(let i=0; i<count; i++) {
+                let color;
+                if(CONFIG.monoLock) {
+                    color = baseCol.clone();
+                } else if(CONFIG.hueLock) {
+                    color = new THREE.Color().setHSL(baseHSL.h, 0.4 + Math.random() * 0.5, 0.2 + Math.random() * 0.4);
+                } else {
+                    const k1 = colorKeys[Math.floor(Math.random() * 6)];
+                    const k2 = colorKeys[Math.floor(Math.random() * 6)];
+                    color = new THREE.Color().lerpColors(new THREE.Color(CONFIG[k1]), new THREE.Color(CONFIG[k2]), Math.random());
+                }
+
+                const mat = new THREE.SpriteMaterial({
+                    map: glowMap,
+                    color: color,
+                    transparent: true,
+                    opacity: Number(CONFIG.cloudOpacity),
+                    blending: THREE.NormalBlending, 
+                    depthWrite: false
+                });
+                
+                const sprite = new THREE.Sprite(mat);
+                const dist = 40 + Math.random() * Number(CONFIG.nebulaRadius);
+                const phi = Math.random() * Math.PI * 2;
+                const theta = (Math.random() - 0.5) * Math.PI * 0.8 + Math.PI/2;
+                
+                sprite.position.setFromSphericalCoords(dist, phi, theta);
+                sprite.scale.setScalar((20 + Math.random() * 60) * Number(CONFIG.cloudScale));
+                
+                sprite.userData = {
+                    phi, theta, dist,
+                    phiVel: (Math.random() - 0.5) * 0.02 * Number(CONFIG.chaosDrift),
+                    thetaVel: (Math.random() - 0.5) * 0.02 * Number(CONFIG.chaosDrift),
+                    distVel: (Math.random() - 0.5) * 0.1 * Number(CONFIG.chaosDrift),
+                    phase: Math.random() * Math.PI * 2,
+                    scaleBase: sprite.scale.x
+                };
+
+                nebulaGroup.add(sprite);
+                nebulaClouds.push(sprite);
+            }
+        }
+
+        function animate(t) {
+            requestAnimationFrame(animate);
+            const dt = t * 0.001;
+
+            nebulaGroup.rotation.y += 0.0006 * Number(CONFIG.orbSpeed);
+            starGroup.rotation.y += 0.0001 * Number(CONFIG.starSpeed);
+
+            if(starMaterial) {
+                starMaterial.uniforms.time.value = dt;
+                starMaterial.uniforms.globalIntensity.value = Number(CONFIG.starIntensity) / 10;
+                starMaterial.uniforms.twinkleSpeed.value = Number(CONFIG.starTwinkle);
+                starMaterial.uniforms.baseSize.value = Number(CONFIG.starSize);
+                starMaterial.uniforms.sizeVariance.value = Number(CONFIG.starVariance);
+            }
+
+            if (ball) {
+                if (!isDraggingBall) {
+                    const force = ball.position.clone().multiplyScalar(-springK);
+                    ballVelocity.add(force);
+                    ballVelocity.multiplyScalar(damping);
+                    ball.position.add(ballVelocity);
+                }
+                
+                ball.rotation.y += Number(CONFIG.spinVel);
+                const baseIntensity = Math.max(8.0, Number(CONFIG.reflectIntensity));
+                ball.material.envMapIntensity = baseIntensity * (0.9 + Math.sin(dt * Number(CONFIG.dispersion || 1.0)) * 0.1);
+
+                if (wire) {
+                    const anchor = new THREE.Vector3(0, 1000, 0); 
+                    const ballTop = ball.position.clone().add(new THREE.Vector3(0, Number(CONFIG.coreSize), 0));
+                    wire.position.copy(anchor.clone().add(ballTop).divideScalar(2));
+                    wire.lookAt(ballTop);
+                    wire.rotateX(Math.PI/2);
+                    wire.scale.y = anchor.distanceTo(ballTop) / 1000;
+                }
+            }
+
+            nebulaClouds.forEach(sprite => {
+                const u = sprite.userData;
+                u.phi += u.phiVel * Number(CONFIG.orbSpeed);
+                u.theta += u.thetaVel * Number(CONFIG.orbSpeed);
+                u.dist += u.distVel * Number(CONFIG.orbSpeed);
+                
+                u.dist = Math.max(30, Math.min(u.dist, Number(CONFIG.nebulaRadius) + 80));
+                sprite.position.setFromSphericalCoords(u.dist, u.phi, u.theta);
+                
+                const pulse = Math.sin(dt * 0.8 * Number(CONFIG.pulseSpeed) + u.phase) * 0.5 + 0.5;
+                sprite.material.opacity = (Number(CONFIG.cloudOpacity) * 0.25) + pulse * (Number(CONFIG.cloudOpacity) * 0.75);
+                sprite.scale.setScalar(u.scaleBase * (0.85 + pulse * 0.3));
+            });
+
+            if(ball) {
+                const ballVisibleState = ball.visible;
+                const wireVisibleState = wire ? wire.visible : false;
+                ball.visible = false;
+                if(wire) wire.visible = false;
+                cubeCamera.update(renderer, scene);
+                ball.visible = ballVisibleState;
+                if(wire) wire.visible = wireVisibleState;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function randomizeSettings(isInitial = false) {
+            CONFIG.orbCount = Math.floor(Math.random() * 400 + 100);
+            CONFIG.cloudScale = Number((Math.random() * 0.8 + 0.4).toFixed(2)); 
+            CONFIG.nebulaRadius = Math.floor(Math.random() * 200 + 100);
+            CONFIG.orbSpeed = Number((Math.random() * 1.5 + 0.2).toFixed(2));
+            CONFIG.chaosDrift = Number((Math.random() * 1.5 + 0.5).toFixed(1));
+            CONFIG.pulseSpeed = Number((Math.random() * 2 + 0.5).toFixed(1));
+            CONFIG.cloudOpacity = Number((Math.random() * 0.5 + 0.3).toFixed(2));
+            CONFIG.roughness = Number((Math.random() * 0.08).toFixed(3));
+            CONFIG.spinVel = Number((Math.random() * 0.002).toFixed(5));
+            CONFIG.metalness = Number((Math.random() * 0.4 + 0.6).toFixed(1));
+            CONFIG.reflectIntensity = Number((Math.random() * 25 + 10).toFixed(1)); 
+            CONFIG.exposure = Number((Math.random() * 0.5 + 0.3).toFixed(2));
+            CONFIG.starIntensity = Number((Math.random() * 600 + 300).toFixed(0)); 
+            CONFIG.starSpeed = Number((Math.random() * 1.2 + 0.1).toFixed(1));
+            CONFIG.starSize = Number((Math.random() * 4 + 1).toFixed(1));
+            CONFIG.starVariance = Number(Math.random().toFixed(2));
+            CONFIG.coreSize = Number((Math.random() * 4 + 4).toFixed(1));
+            
+            CONFIG.facetRes = Math.floor(Math.random() * 96 + 16);
+            CONFIG.camFov = Math.floor(Math.random() * 60 + 20);
+            CONFIG.starTwinkle = Number((Math.random() * 2 + 0.5).toFixed(1));
+            CONFIG.starCount = Math.floor(Math.random() * 40000 + 5000);
+            
+            CONFIG.hueLock = Math.random() > 0.8;
+            CONFIG.monoLock = !CONFIG.hueLock && Math.random() > 0.8;
+            CONFIG.starsVisible = true;
+
+            const colorKeys = ['lightA', 'lightB', 'lightC', 'lightD', 'lightE', 'lightF'];
+            colorKeys.forEach(k => {
+                CONFIG[k] = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+            });
+
+            if(camera) {
+                const randomDist = 40 + Math.random() * 120;
+                camera.position.setLength(randomDist);
+                camera.fov = CONFIG.camFov;
+                camera.updateProjectionMatrix();
+            }
+
+            if(!isInitial) updateUI();
+        }
+
+        async function randomize() {
+            if(isTransitioning) return;
+            isTransitioning = true;
+            els.overlay.style.opacity = '1';
+            await new Promise(r => setTimeout(r, 600));
+            randomizeSettings();
+            createBall();
+            createNebula();
+            createStars();
+            els.overlay.style.opacity = '0';
+            setTimeout(() => isTransitioning = false, 600);
+        }
+
+        function updateUI() {
+            document.querySelectorAll('input[type="range"]').forEach(input => {
+                const id = input.id;
+                const valEl = document.getElementById(`${id}-val`);
+                let key = id;
+                if(id === 'reflect-intensity') key = 'reflectIntensity';
+                if(id === 'facet-res') key = 'facetRes';
+                if(id === 'core-size') key = 'coreSize';
+                if(id === 'cloud-scale') key = 'cloudScale';
+                if(id === 'nebula-radius') key = 'nebulaRadius';
+                if(id === 'orb-speed') key = 'orbSpeed';
+                if(id === 'rot-speed') key = 'spinVel';
+                if(id === 'star-count') key = 'starCount';
+                if(id === 'star-intensity') key = 'starIntensity';
+                if(id === 'star-speed') key = 'starSpeed';
+                if(id === 'star-size') key = 'starSize';
+                if(id === 'star-twinkle') key = 'starTwinkle';
+                if(id === 'star-variance') key = 'starVariance';
+                if(id === 'chaos-drift') key = 'chaosDrift';
+                if(id === 'cloud-opacity') key = 'cloudOpacity';
+                if(id === 'cam-fov') key = 'camFov';
+                if(id === 'pulse-speed') key = 'pulseSpeed';
+                
+                const val = CONFIG[key];
+                if (val !== undefined) {
+                    input.value = val;
+                    if (valEl) valEl.textContent = val;
+                }
+            });
+
+            document.getElementById('hue-lock').checked = CONFIG.hueLock;
+            document.getElementById('mono-lock').checked = CONFIG.monoLock;
+            document.getElementById('stars-visible').checked = CONFIG.starsVisible;
+
+            const configKeys = ['lightA', 'lightB', 'lightC', 'lightD', 'lightE', 'lightF'];
+            els.colors.forEach((id, i) => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.value = CONFIG[configKeys[i]];
+                    if((CONFIG.hueLock || CONFIG.monoLock) && i > 0) {
+                        el.classList.add('disabled-ui');
+                    } else {
+                        el.classList.remove('disabled-ui');
+                    }
+                }
+            });
+            
+            if(renderer) renderer.toneMappingExposure = Number(CONFIG.exposure);
+        }
+
+        function setupInteractions() {
+            let dragCamera = false, lastX, lastY;
+            
+            const getPointerPos = (e) => {
+                const p = e.touches ? e.touches[0] : e;
+                return { x: p.clientX, y: p.clientY };
+            };
+
+            const getTouchDist = (e) => {
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                return Math.sqrt(Math.pow(t2.clientX - t1.clientX, 2) + Math.pow(t2.clientY - t1.clientY, 2));
+            };
+
+            const start = (e) => {
+                if(e.target.closest('#settings-panel') || e.target.closest('#help-modal')) return;
+                
+                // Pinch zoom init
+                if (e.touches && e.touches.length === 2) {
+                    dragCamera = false;
+                    isDraggingBall = false;
+                    initialPinchDist = getTouchDist(e);
+                    return;
+                }
+
+                const pos = getPointerPos(e);
+                lastX = pos.x; lastY = pos.y;
+
+                const mouse = new THREE.Vector2(
+                    (pos.x / window.innerWidth) * 2 - 1,
+                    -(pos.y / window.innerHeight) * 2 + 1
+                );
+                ballRaycaster.setFromCamera(mouse, camera);
+                const intersects = ballRaycaster.intersectObject(ball);
+
+                if (intersects.length > 0) {
+                    isDraggingBall = true;
+                    ballVelocity.set(0,0,0);
+                    dragPlane.setFromNormalAndCoplanarPoint(
+                        camera.getWorldDirection(new THREE.Vector3()).negate(),
+                        ball.position
+                    );
+                } else {
+                    dragCamera = true;
+                }
+            };
+
+            const move = (e) => {
+                // Pinch Zoom Logic (Scene Only)
+                if (e.touches && e.touches.length === 2) {
+                    const currentDist = getTouchDist(e);
+                    const diff = initialPinchDist - currentDist;
+                    const r = camera.position.length();
+                    const newR = Math.max(25, Math.min(4000, r + diff * 0.5));
+                    camera.position.setLength(newR);
+                    camera.lookAt(0,0,0);
+                    initialPinchDist = currentDist;
+                    return; 
+                }
+                
+                // Prevent browser refresh/pull only if we are handling an app gesture
+                if (e.cancelable && (isDraggingBall || dragCamera)) {
+                    e.preventDefault();
+                }
+
+                const pos = getPointerPos(e);
+                
+                if (isDraggingBall) {
+                    const mouse = new THREE.Vector2(
+                        (pos.x / window.innerWidth) * 2 - 1,
+                        -(pos.y / window.innerHeight) * 2 + 1
+                    );
+                    ballRaycaster.setFromCamera(mouse, camera);
+                    if (ballRaycaster.ray.intersectPlane(dragPlane, planeIntersection)) {
+                        const limit = 25;
+                        if (planeIntersection.length() > limit) {
+                            planeIntersection.setLength(limit);
+                        }
+                        ball.position.copy(planeIntersection);
+                    }
+                } else if (dragCamera) {
+                    const dx = (pos.x - lastX) * 0.005;
+                    const dy = (pos.y - lastY) * 0.005;
+                    const r = camera.position.length();
+                    const phi = Math.atan2(camera.position.x, camera.position.z) - dx;
+                    const theta = Math.acos(camera.position.y / r) - dy;
+                    const clampedTheta = Math.max(0.1, Math.min(Math.PI - 0.1, theta));
+                    camera.position.x = r * Math.sin(clampedTheta) * Math.sin(phi);
+                    camera.position.y = r * Math.cos(clampedTheta);
+                    camera.position.z = r * Math.sin(clampedTheta) * Math.cos(phi);
+                    camera.lookAt(0,0,0);
+                }
+                lastX = pos.x; lastY = pos.y;
+            };
+
+            const end = () => {
+                isDraggingBall = false;
+                dragCamera = false;
+            };
+
+            window.addEventListener('mousedown', start);
+            window.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', end);
+            window.addEventListener('touchstart', start, {passive:false});
+            window.addEventListener('touchmove', move, {passive:false});
+            window.addEventListener('touchend', end);
+            
+            window.addEventListener('wheel', (e) => {
+                if(!els.panel.classList.contains('hidden-panel')) return;
+                const r = camera.position.length();
+                const newR = Math.max(25, Math.min(4000, r + e.deltaY * 0.25));
+                camera.position.setLength(newR);
+                camera.lookAt(0,0,0);
+            }, {passive:true});
+
+            window.addEventListener('keydown', (e) => {
+                if(e.key === 'Escape') {
+                    if(!els.help.classList.contains('hidden')) {
+                        els.help.classList.add('hidden');
+                    } else {
+                        els.panel.classList.add('hidden-panel');
+                    }
+                }
+            });
+        }
+
+        function bindUI() {
+            els.toggle.onclick = () => { els.panel.classList.toggle('hidden-panel'); updateUI(); };
+            document.getElementById('close-settings').onclick = () => els.panel.classList.add('hidden-panel');
+            document.getElementById('help-trigger').onclick = () => els.help.classList.remove('hidden');
+            document.getElementById('close-help').onclick = () => els.help.classList.add('hidden');
+            
+            const handleInput = (id, key, callback) => {
+                const el = document.getElementById(id);
+                if(!el) return;
+                el.oninput = (e) => {
+                    const val = parseFloat(e.target.value);
+                    CONFIG[key] = val;
+                    const valEl = document.getElementById(`${id}-val`);
+                    if(valEl) valEl.textContent = val;
+                    if(callback) callback(val);
+                };
+            };
+
+            handleInput('orb-count', 'orbCount', () => createNebula());
+            handleInput('cloud-scale', 'cloudScale', () => createNebula());
+            handleInput('nebula-radius', 'nebulaRadius', () => createNebula());
+            handleInput('orb-speed', 'orbSpeed');
+            handleInput('chaos-drift', 'chaosDrift');
+            handleInput('pulse-speed', 'pulseSpeed');
+            handleInput('cloud-opacity', 'cloudOpacity', () => createNebula());
+            handleInput('rot-speed', 'spinVel');
+            handleInput('metalness', 'metalness', (v) => { if(ball) ball.material.metalness = Number(v); });
+            handleInput('dispersion', 'dispersion');
+            handleInput('facet-res', 'facetRes', () => createBall());
+            handleInput('core-size', 'coreSize', () => createBall());
+            handleInput('reflect-intensity', 'reflectIntensity', (v) => { if(ball) ball.material.envMapIntensity = Math.max(8.0, Number(v)); });
+            handleInput('exposure', 'exposure', (v) => { if(renderer) renderer.toneMappingExposure = Number(v); });
+            handleInput('roughness', 'roughness', (v) => { if(ball) ball.material.roughness = Number(v); });
+            handleInput('star-count', 'starCount', () => createStars());
+            handleInput('star-intensity', 'starIntensity');
+            handleInput('star-speed', 'starSpeed');
+            handleInput('star-twinkle', 'starTwinkle');
+            handleInput('star-size', 'starSize');
+            handleInput('star-variance', 'starVariance');
+            handleInput('cam-fov', 'camFov', (v) => { if(camera) { camera.fov = Number(v); camera.updateProjectionMatrix(); } });
+
+            document.getElementById('stars-visible').onchange = (e) => { 
+                CONFIG.starsVisible = e.target.checked; 
+                if(starField) starField.visible = CONFIG.starsVisible; 
+            };
+            document.getElementById('hue-lock').onchange = (e) => { CONFIG.hueLock = e.target.checked; if(e.target.checked) CONFIG.monoLock = false; updateUI(); createNebula(); };
+            document.getElementById('mono-lock').onchange = (e) => { CONFIG.monoLock = e.target.checked; if(e.target.checked) CONFIG.hueLock = false; updateUI(); createNebula(); };
+
+            els.colors.forEach((id, i) => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.oninput = (e) => { 
+                        const keys = ['lightA', 'lightB', 'lightC', 'lightD', 'lightE', 'lightF'];
+                        CONFIG[keys[i]] = e.target.value; 
+                        createNebula(); 
+                    };
+                }
+            });
+
+            document.getElementById('randomize-btn').onclick = randomize;
+
+            document.getElementById('export-json').onclick = () => {
+                const blob = new Blob([JSON.stringify(CONFIG, null, 2)], {type : 'application/json'});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `Optical_Config_${Date.now()}.json`;
+                a.click();
+            };
+
+            document.getElementById('import-json').onclick = () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const imported = JSON.parse(event.target.result);
+                        Object.assign(CONFIG, imported);
+                        createBall(); createNebula(); createStars(); updateUI();
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            };
+
+            document.getElementById('export-wallpaper').onclick = () => {
+                const w = 3840, h = 2160;
+                const origSize = new THREE.Vector2(); renderer.getSize(origSize);
+                camera.aspect = w/h; camera.updateProjectionMatrix();
+                renderer.setSize(w,h); renderer.render(scene, camera);
+                const a = document.createElement('a'); a.download = `Nebula_Manifest_${Date.now()}.png`; a.href = renderer.domElement.toDataURL(); a.click();
+                renderer.setSize(origSize.x, origSize.y); camera.aspect = origSize.x/origSize.y; camera.updateProjectionMatrix();
+            };
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
+    </script>
+
+</body></html>
